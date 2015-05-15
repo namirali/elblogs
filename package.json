@@ -1,6 +1,6 @@
 {
   "name": "elblogs",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Tool for getting Access Logs from Amazon ELB",
   "main": "index.js",
   "author": "Amirali N. <n.amirali@gmail.com> ",
