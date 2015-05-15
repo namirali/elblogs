@@ -1,9 +1,9 @@
 {
   "name": "elblogs",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Tool for getting Access Logs from Amazon ELB",
   "main": "index.js",
-  "author": "Amirali N.",
+  "author": "Amirali N. <n.amirali@gmail.com> ",
   "repository": {
     "type": "git",
     "url": "https://github.com/namirali/elblogs"
@@ -12,6 +12,8 @@
   "bin": {
     "elblogs": "index.js"
   },
+  "keywords" : ["aws", "elb", "amazon elb", "aws elb"],
+  "preferGlobal" : true,
   "dependencies": {
     "async": "^0.9.0",
     "aws-sdk": "^2.1.5",
