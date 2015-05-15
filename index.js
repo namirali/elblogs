@@ -1,24 +1,29 @@
+#!/usr/bin/env node
+
 var aws = require('aws-sdk')
   , ms = require('ms')
   , moment = require('moment')
   , async = require('async')
   , fs = require('fs')
-  , conf = require('./config.json')
   , now = +moment()
   , argv = process.argv.slice(2);
 
+var config = {accessKeyId: process.env.AWS_ACCESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, region: process.env.AWS_DEFAULT_REGION};
+
 require('moment-range');
 
-aws.config.update(conf.aws);
+aws.config.update(config);
 
 if (argv.length < 2) {
-  console.log('usage: [lbName (--all for all)] [from ms|Date(ex: YYYY-MM-DDTHH:MM)] [to ms|Date(ex: YYYY-MM-DDTHH:MM) -optional]');
+  console.log('usage: [accountId] [bucket] [lbName (--all for all)] [from ms|Date(ex: YYYY-MM-DDTHH:MM)] [to ms|Date(ex: YYYY-MM-DDTHH:MM) -optional]');
   process.exit();
 }
 
-var lbName = argv[0]
-  , from = now - ( ms(argv[1]) || moment().diff(argv[1]) )
-  , to = now - (argv[2] ? ms(argv[2]) ? ms(argv[2]) : moment().diff(argv[2]) : 0);
+var accountId = argv[0]
+  , bucket = argv[1]
+  , lbName = argv[2]
+  , from = now - ( ms(argv[3]) || moment().diff(argv[3]) )
+  , to = now - (argv[4] ? ms(argv[4]) ? ms(argv[4]) : moment().diff(argv[4]) : 0);
 
 var fromDate = moment(from)
   , toDate = moment(to);
@@ -34,6 +39,7 @@ if (!( fromDate.isValid() && toDate.isValid && (toDate > fromDate)  )) {
     var files = fs.readdirSync(dirPath);
   }
   catch(e) {
+    fs.mkdirSync(dirPath);
     return;
   }
   if (files.length > 0)
@@ -59,8 +65,8 @@ var s3 = new aws.S3();
 
 async.each(days, function (i, next) {
     var attr = {
-      Bucket: conf.bucket,
-      Prefix: ['AWSLogs', conf.aws.accountId, 'elasticloadbalancing', conf.aws.region, i.format('YYYY/MM/DD/')].join('/')
+      Bucket: bucket,
+      Prefix: ['AWSLogs', accountId, 'elasticloadbalancing', config.region, i.format('YYYY/MM/DD/')].join('/')
     };
 
     (function list (next, attr) {
@@ -101,14 +107,14 @@ async.each(days, function (i, next) {
       if (!date.isValid() || !range.contains(date)) return next();
 
       s3.getObject({
-        Bucket: conf.bucket,
+        Bucket: bucket,
         Key: key
       }, function (err, data) {
-        if (err) return setImmediate(next);
+        if (err) return setImmediate(next || new Error("No data"));
         var filename = key.replace(/\//g, '_');
 
         fs.writeFile('./logs/' + filename, data.Body, function (err, data) {
-          if (err) return setImmediate(next);
+          if (err) return setImmediate(next,err);
           next()
         });
       })

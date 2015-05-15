@@ -1,9 +1,0 @@
-{
-  "aws": {
-    "accountId": "", // The AWS account number associated with the load balancer
-    "accessKeyId": "",
-    "secretAccessKey": "",
-    "region": ""
-  },
-  "bucket": "" // Name of bucket where logs are stored
-}
