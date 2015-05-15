@@ -3,7 +3,7 @@ var aws = require('aws-sdk')
   , moment = require('moment')
   , async = require('async')
   , fs = require('fs')
-  , conf = require('./conf.json')
+  , conf = require('./config.json')
   , now = +moment()
   , argv = process.argv.slice(2);
 
@@ -27,6 +27,7 @@ if (!( fromDate.isValid() && toDate.isValid && (toDate > fromDate)  )) {
   console.log('given dates are not valid');
   process.exit();
 }
+
 
 (function rmDir (dirPath) {
   try {
@@ -65,7 +66,7 @@ async.each(days, function (i, next) {
     (function list (next, attr) {
       s3.listObjects(attr,
         function (err, data) {
-          if (err) return setImmediate(next);
+          if (err || !data) return setImmediate(next, err || new Error('No data'));
 
           var contents = data.Contents || []
             , lastItem = contents.length - 1;
