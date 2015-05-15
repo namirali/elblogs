@@ -14,7 +14,7 @@ require('moment-range');
 
 aws.config.update(config);
 
-if (argv.length < 2) {
+if (argv.length < 4) {
   console.log('usage: [accountId] [bucket] [lbName (--all for all)] [from ms|Date(ex: YYYY-MM-DDTHH:MM)] [to ms|Date(ex: YYYY-MM-DDTHH:MM) -optional]');
   process.exit();
 }
