@@ -10,6 +10,11 @@ var aws = require('aws-sdk')
 
 var config = {accessKeyId: process.env.AWS_ACCESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, region: process.env.AWS_DEFAULT_REGION};
 
+if(! (config.accessKeyId || config.secretAccessKey || config.region) ){
+  console.log('AWS credentials not set in ENV');
+  process.exit();
+}
+
 require('moment-range');
 
 aws.config.update(config);
