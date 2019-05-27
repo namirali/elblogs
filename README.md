@@ -2,7 +2,7 @@
 gets Access Logs of given Amazon ELB
 
 it uses user environment as aws credentials
-`AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION` 
+`AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION` or `AWS_PROFILE`
 
 ## Install
 `npm install -g elblogs`
