@@ -8,7 +8,7 @@ var aws = require('aws-sdk')
   , now = +moment()
   , argv = process.argv.slice(2);
 
-var config = {accessKeyId: process.env.AWS_ACCESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, region: process.env.AWS_DEFAULT_REGION, profile: process.env.AWS_PROFILE};
+var config = {accessKeyId: process.env.AWS_ACCESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, region: process.env.AWS_DEFAULT_REGION, profile: process.env.AWS_PROFILE, sessionToken: process.env.AWS_SESSION_TOKEN}};
 
 if(! ( (config.accessKeyId && config.secretAccessKey && config.region) || config.profile ) ){
   console.log('AWS credentials not set in ENV. Exported AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_DEFAULT_REGION or AWS_PROFILE required');
