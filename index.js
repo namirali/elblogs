@@ -1,23 +1,19 @@
 #!/usr/bin/env node
 
-var aws = require('aws-sdk')
-  , ms = require('ms')
+var ms = require('ms')
   , moment = require('moment')
   , async = require('async')
   , fs = require('fs')
   , now = +moment()
   , argv = process.argv.slice(2);
 
-var config = {accessKeyId: process.env.AWS_ACCESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, region: process.env.AWS_DEFAULT_REGION, profile: process.env.AWS_PROFILE, sessionToken: process.env.AWS_SESSION_TOKEN}};
+const {
+  S3
+} = require("@aws-sdk/client-s3");
 
-if(! ( (config.accessKeyId && config.secretAccessKey && config.region) || config.profile ) ){
-  console.log('AWS credentials not set in ENV. Exported AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_DEFAULT_REGION or AWS_PROFILE required');
-  process.exit();
-}
+const { fromEnv } = require("@aws-sdk/credential-providers");
 
 require('moment-range');
-
-aws.config.update(config);
 
 if (argv.length < 4) {
   console.log('usage: [accountId] [bucket] [lbName (--all for all)] [from ms|Date(ex: YYYY-MM-DDTHH:MM)] [to ms|Date(ex: YYYY-MM-DDTHH:MM) -optional]');
@@ -66,12 +62,13 @@ range.by('days', function (m) {
   days.push(m);
 });
 
-var s3 = new aws.S3();
+const region = process.env.AWS_DEFAULT_REGION;
+const s3 = new S3({region, credentials: fromEnv()});
 
 async.each(days, function (i, next) {
     var attr = {
       Bucket: bucket,
-      Prefix: ['AWSLogs', accountId, 'elasticloadbalancing', config.region, i.format('YYYY/MM/DD/')].join('/')
+      Prefix: ['AWSLogs', accountId, 'elasticloadbalancing', region, i.format('YYYY/MM/DD/')].join('/')
     };
 
     (function list (next, attr) {
@@ -118,7 +115,8 @@ async.each(days, function (i, next) {
         if (err) return setImmediate(next || new Error("No data"));
         var filename = key.replace(/\//g, '_');
 
-        fs.writeFile('./logs/' + filename, data.Body, function (err, data) {
+        const body = await data.Body.transformToByteArray();
+        fs.writeFile('./logs/' + filename, new Buffer.from(body), function (err, data) {
           if (err) return setImmediate(next,err);
           next()
         });
