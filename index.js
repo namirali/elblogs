@@ -51,12 +51,12 @@ if (!( fromDate.isValid() && toDate.isValid && (toDate > fromDate)  )) {
   if (files.length > 0)
     for(var i = 0; i < files.length; i++) {
       var filePath = dirPath + '/' + files[i];
-      if (fs.statSync(filePath).isFile())
+      if (fs.statSync(filePath).isFile() && files[i] !== '.gitignore')
         fs.unlinkSync(filePath);
-      else
+      else if (fs.statSync(filePath).isDirectory())
         rmDir(filePath);
     }
-})('./logs');
+  })('./logs');
 
 var range = moment.range(fromDate, toDate);
 
