@@ -115,11 +115,13 @@ async.each(days, function (i, next) {
         if (err) return setImmediate(next || new Error("No data"));
         var filename = key.replace(/\//g, '_');
 
-        const body = await data.Body.transformToByteArray();
-        fs.writeFile('./logs/' + filename, new Buffer.from(body), function (err, data) {
-          if (err) return setImmediate(next,err);
-          next()
-        });
+        (async () => {
+          const body = await data.Body.transformToByteArray();
+          fs.writeFile('./logs/' + filename, new Buffer.from(body), function (err, data) {
+            if (err) return setImmediate(next,err);
+            next()
+          });
+        })();
       })
     })
   });
