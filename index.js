@@ -25,6 +25,11 @@ var accountId = argv[0]
   , lbName = argv[2]
   , from = now - ( ms(argv[3]) || moment().diff(argv[3]) )
   , to = now - (argv[4] ? ms(argv[4]) ? ms(argv[4]) : moment().diff(argv[4]) : 0);
+var bucketPrefix = "";
+
+if (bucket.includes("/")) {
+  [bucket, bucketPrefix] = bucket.split("/", 2);
+}
 
 var fromDate = moment(from)
   , toDate = moment(to);
@@ -66,9 +71,14 @@ const region = process.env.AWS_DEFAULT_REGION;
 const s3 = new S3({region, credentials: fromEnv()});
 
 async.each(days, function (i, next) {
+    console.log('processing', i.format('YYYY/MM/DD'));
+    var parts = [bucketPrefix, 'AWSLogs', accountId, 'elasticloadbalancing', region, i.format('YYYY/MM/DD/')];
+    if (!bucketPrefix) {
+      parts.shift();
+    }
     var attr = {
       Bucket: bucket,
-      Prefix: ['AWSLogs', accountId, 'elasticloadbalancing', region, i.format('YYYY/MM/DD/')].join('/')
+      Prefix: parts.join('/')
     };
 
     (function list (next, attr) {
