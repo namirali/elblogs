@@ -25,15 +25,20 @@ var accountId = argv[0]
   , lbName = argv[2]
   , from = now - ( ms(argv[3]) || moment().diff(argv[3]) )
   , to = now - (argv[4] ? ms(argv[4]) ? ms(argv[4]) : moment().diff(argv[4]) : 0);
+var bucketPrefix = "";
+
+if (bucket.includes("/")) {
+  [bucket, bucketPrefix] = bucket.split("/", 2);
+}
 
 var fromDate = moment(from)
   , toDate = moment(to);
 
 if (!( fromDate.isValid() && toDate.isValid && (toDate > fromDate)  )) {
-  console.log('given dates are not valid');
+  console.log('given dates (${fromDate} - ${toDate}) are not valid');
   process.exit();
 }
-
+console.log('dates are valid: ', fromDate.utc(), toDate.utc());
 
 (function rmDir (dirPath) {
   try {
@@ -46,12 +51,12 @@ if (!( fromDate.isValid() && toDate.isValid && (toDate > fromDate)  )) {
   if (files.length > 0)
     for(var i = 0; i < files.length; i++) {
       var filePath = dirPath + '/' + files[i];
-      if (fs.statSync(filePath).isFile())
+      if (fs.statSync(filePath).isFile() && files[i] !== '.gitignore')
         fs.unlinkSync(filePath);
-      else
+      else if (fs.statSync(filePath).isDirectory())
         rmDir(filePath);
     }
-})('./logs');
+  })('./logs');
 
 var range = moment.range(fromDate, toDate);
 
@@ -66,19 +71,25 @@ const region = process.env.AWS_DEFAULT_REGION;
 const s3 = new S3({region, credentials: fromEnv()});
 
 async.each(days, function (i, next) {
+    console.log('processing', i.format('YYYY/MM/DD'));
+    var parts = [bucketPrefix, 'AWSLogs', accountId, 'elasticloadbalancing', region, i.format('YYYY/MM/DD/')];
+    if (!bucketPrefix) {
+      parts.shift();
+    }
     var attr = {
       Bucket: bucket,
-      Prefix: ['AWSLogs', accountId, 'elasticloadbalancing', region, i.format('YYYY/MM/DD/')].join('/')
+      Prefix: parts.join('/')
     };
 
     (function list (next, attr) {
+      console.log('listing', attr.Bucket, attr.Prefix);
       s3.listObjects(attr,
         function (err, data) {
           if (err || !data) return setImmediate(next, err || new Error('No data'));
 
           var contents = data.Contents || []
             , lastItem = contents.length - 1;
-
+          console.log('got', contents.length, 'objects');
           for(var i = 0; i < contents.length; i++) {
             keys.push(contents[i]);
 
@@ -94,6 +105,7 @@ async.each(days, function (i, next) {
     })(next, attr)
   },
   function () {
+    console.log('processing keys', keys.length);
     async.each(keys, function (k, next) {
       var key = k.Key;
 
@@ -108,6 +120,8 @@ async.each(days, function (i, next) {
       var date = moment.utc(match[1], 'YYYYMMDDHHmm');
       if (!date.isValid() || !range.contains(date)) return next();
 
+      console.log('found logfile', key);
+
       s3.getObject({
         Bucket: bucket,
         Key: key
@@ -115,11 +129,13 @@ async.each(days, function (i, next) {
         if (err) return setImmediate(next || new Error("No data"));
         var filename = key.replace(/\//g, '_');
 
-        const body = await data.Body.transformToByteArray();
-        fs.writeFile('./logs/' + filename, new Buffer.from(body), function (err, data) {
-          if (err) return setImmediate(next,err);
-          next()
-        });
+        (async () => {
+          const body = await data.Body.transformToByteArray();
+          fs.writeFile('./logs/' + filename, new Buffer.from(body), function (err, data) {
+            if (err) return setImmediate(next,err);
+            next()
+          });
+        })();
       })
     })
   });
