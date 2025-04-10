@@ -110,7 +110,7 @@ async.each(days, function (i, next) {
       var key = k.Key;
 
       if (lbName != '--all') {
-        var nameMatch = key.match(new RegExp('_' + lbName + '_', 'g'));
+        var nameMatch = key.match(new RegExp('.' + lbName + '.', 'g'));
         if (!nameMatch) return next();
       }
 
